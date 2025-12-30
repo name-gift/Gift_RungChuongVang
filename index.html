@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Tìm kiếm đáp án</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ==================== SCRIPT CHUYỂN SANG LOADING ==================== -->
+<script>
+/* CHỈ NHẢY SANG LOADING 1 LẦN */
+if (!sessionStorage.getItem("fromLoading")) {
+    sessionStorage.setItem("fromLoading", "1");
+    setTimeout(() => {
+        window.location.replace("loading.html");
+    }, 300); // 300ms delay trước khi hiển thị loading
+}
+</script>
+
+<!-- ==================== CSS ==================== -->
+<style>
+:root{
+    --bg:#020617;
+    --card:rgba(255,255,255,0.06);
+    --border:rgba(255,255,255,0.12);
+    --text:#e5e7eb;
+    --muted:#94a3b8;
+    --primary:#3b82f6;
+    --primary-hover:#2563eb;
+    --success:#22c55e;
+    --error:#ef4444;
+}
+
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:system-ui, sans-serif;
+    background:
+        radial-gradient(1200px 600px at top left, #1e3a8a33, transparent),
+        radial-gradient(1000px 500px at bottom right, #2563eb22, transparent),
+        var(--bg);
+    color:var(--text);
+}
+
+.box{
+    width:92%;
+    max-width:520px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+    backdrop-filter: blur(12px);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:26px;
+    box-shadow:0 25px 60px rgba(0,0,0,0.45);
+}
+
+h2{
+    margin:0 0 10px;
+    text-align:center;
+}
+
+.desc{
+    text-align:center;
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:16px;
+}
+
+input{
+    width:100%;
+    padding:14px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:#020617;
+    color:var(--text);
+    font-size:16px;
+    outline:none;
+}
+
+input:focus{
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px #3b82f633;
+}
+
+button{
+    width:100%;
+    margin-top:12px;
+    padding:14px;
+    border-radius:10px;
+    border:none;
+    font-size:16px;
+    font-weight:600;
+    color:white;
+    background:linear-gradient(135deg, var(--primary), #60a5fa);
+    cursor:pointer;
+}
+
+button:hover{
+    background:linear-gradient(135deg, var(--primary-hover), #3b82f6);
+}
+
+.result{
+    margin-top:18px;
+    padding:16px;
+    border-radius:12px;
+    background:#020617;
+    border:1px solid var(--border);
+    font-size:15px;
+    line-height:1.6;
+}
+
+.ok{color:var(--success)}
+.err{color:var(--error)}
+
+mark{
+    background:#fde68a;
+    color:#111827;
+    padding:2px 4px;
+    border-radius:4px;
+}
+
+.footer{
+    text-align:center;
+    margin-top:14px;
+    font-size:12px;
+    color:#64748b;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+    <h2>🔍 Tìm kiếm đáp án</h2>
+    <div class="desc">Nhập câu hỏi hoặc từ khóa để tìm đáp án</div>
+
+    <input id="question" placeholder="Ví dụ: khi nói, một lớp học, in a happy">
+    <button onclick="searchAnswer()">🔎 Tìm kiếm</button>
+
+    <div class="result" id="result">
+        Nhập từ khóa và bấm <b>Tìm kiếm</b> ✨
+    </div>
+
+    <div class="footer">Made by Name Gift</div>
+</div>
+
+<script>
+const data = [
+    {
+        q: "Khi nói Trường học hạnh phúc bắt đầu từ cảm xúc an toàn của học sinh",
+        a: "Đáp án đúng: <b>B</b><br>Môi trường học đường cần giúp học sinh cảm thấy được tôn trọng và bảo vệ."
+    },
+    {
+        q: "Một lớp học có bảng nội quy được chính học sinh thảo luận và biểu quyết thông qua. Điều này thể hiện:",
+        a: "Đáp án đúng: <b>C</b><br>Tinh thần dân chủ, tôn trọng tiếng nói của học sinh trong nhà trường."
+    },
+    {
+        q: "In a happy school, teachers are expected to:",
+        a: "Đáp án đúng: <b>A</b><br>Build positive relationships with students based on care and respect."
+    },
+    {
+        q: "Giờ ra chơi, các nhóm học sinh cùng tham gia trò chơi vận động, đọc sách, hoặc trò chuyện thân thiện. Không có hiện tượng trêu chọc, gây gổ. Điều này thể hiện:",
+        a: "Đáp án đúng: <b>C</b><br>Môi trường học đường an toàn, thân thiện và không bạo lực."
+    },
+    {
+        q: "“Happy learning” focuses on:",
+        a: "Đáp án đúng: <b>A</b><br>Students enjoying the process of learning, not just results."
+    },
+    {
+        q: "“Một học sinh chủ động nhặt rác trong lớp, dù không phải phần việc của mình. Hành vi đó thể hiện:",
+        a: "Đáp án đúng: <b>A</b><br>Sự tự giác, tinh thần trách nhiệm và tôn trọng không gian chung."
+    },
+    {
+        q: "“No one is left behind” means that:",
+        a: "Đáp án đúng: <b>A</b><br>Students support each other so everyone can learn and grow."
+    },
+    {
+        q: "Giáo viên khuyến khích học sinh nói lời cảm ơn và xin lỗi khi cần thiết, coi đó là một phần văn hóa ứng xử hàng ngày. Hành động này giúp:",
+        a: "Đáp án đúng: <b>D</b><br>Xây dựng mối quan hệ tôn trọng, chân thành giữa thầy và trò."
+    },
+    {
+        q: "A “safe learning environment” refers to a place where:",
+        a: "Đáp án đúng: <b>A</b><br>Students are physically protected and emotionally supported."
+    },
+    {
+        q: "Khi bạn học mắc lỗi, giáo viên không la mắng mà bình tĩnh hướng dẫn cách sửa, khích lệ để tiến bộ. Đây là biểu hiện của:",
+        a: "Đáp án đúng: <b>B</b><br>Cách xử lý sư phạm dựa trên sự tôn trọng và khích lệ tinh thần tích cực."
+    },
+    {
+        q: "Một trường học được xem là “trường học hạnh phúc” khi:",
+        a: "Đáp án đúng: <b>C</b><br>Tất cả thành viên đều cảm thấy được an toàn, tôn trọng và có cơ hội phát triển bản thân."
+    },
+    {
+        q: "In a happy school, “mutual respect” means that:",
+        a: "Đáp án đúng: <b>B</b><br>Everyone listens, speaks kindly, and values differences."
+    },
+    {
+        q: "Một lớp học thân thiện được thể hiện rõ nhất khi:",
+        a: "Đáp án đúng: <b>A</b><br>Học sinh giúp đỡ nhau, không chê bai khi bạn mắc lỗi."
+    },
+    {
+        q: "Trong trường học hạnh phúc, thầy cô luôn quan tâm hỏi han học sinh về cảm xúc sau giờ học. Việc làm này nhằm:",
+        a: "Đáp án đúng: <b>D</b><br>Thấu hiểu, đồng cảm và chăm sóc sức khỏe tinh thần cho học sinh."
+    },
+    {
+        q: "Một học sinh cảm ơn bạn đã giúp mình trong giờ học, bạn đáp lại bằng nụ cười và lời “Không có gì”. Hành vi đó thể hiện giá trị nào trong trường học hạnh phúc?",
+        a: "Đáp án đúng: <b>A</b><br>Tinh thần hợp tác và lòng biết ơn."
+    }, 
+    {
+        q: "A school organizes a “No Trash Day” every month. This activity aims to:",
+        a: "Đáp án đúng: <b>A</b><br>Practice green living and build environmental awareness."
+    },
+    {
+        q: "Một học sinh tự giác xin lỗi bạn vì nói lời thiếu tôn trọng. Cả lớp vỗ tay khích lệ. Hành động đó thể hiện:",
+        a: "Đáp án đúng: <b>B</b><br>Sự tôn trọng lẫn nhau và xây dựng văn hóa ứng xử tích cực trong lớp học."
+    },
+    {
+        q: "“Emotional safety” in education mainly means:",
+        a: "Đáp án đúng: <b>A</b><br>Students can share feelings without fear of judgment."
+    },
+        {
+        q: "Trường THPT tổ chức hoạt động “Ngày tri ân thầy cô” nơi học sinh viết thư gửi lời cảm ơn. Hoạt động này mang ý nghĩa:",
+        a: "Đáp án đúng: <b>B</b><br>Góp phần xây dựng văn hóa biết ơn, lan tỏa giá trị nhân ái trong học đường."
+    },
+        {
+        q: " In a happy school, students are encouraged to:",
+        a: "Đáp án đúng: <b>B</b><br>Learn with curiosity, respect others, and support friends."
+    },
+    {
+        q: "Một lớp học luôn được duy trì bầu không khí vui vẻ, học sinh cảm thấy “muốn đến trường mỗi ngày”. Đây là kết quả của:",
+        a: "Đáp án đúng: <b>D</b><br>Sự phối hợp hiệu quả giữa giáo viên, học sinh và phụ huynh trong xây dựng môi trường tích cực."
+    },
+    {
+        q: "Khi một học sinh chào thầy cô với thái độ vui vẻ, hành động đó thể hiện:",
+        a: "Đáp án đúng: <b>B</b><br>Sự tôn trọng, thân thiện và văn hóa giao tiếp tích cực."
+    },
+    {
+        q: "Một trường học có thể được coi là “xanh – an toàn – hạnh phúc” khi:",
+        a: "Đáp án đúng: <b>A</b><br>Có không gian sạch đẹp, an toàn và nuôi dưỡng cảm xúc tích cực cho mọi người."
+    },
+    {
+        q: "Trong giờ sinh hoạt, giáo viên hỏi học sinh: “Điều gì khiến các em cảm thấy vui nhất trong tuần vừa qua?”. Câu hỏi này nhằm:",
+        a: "Đáp án đúng: <b>D</b><br>Khuyến khích học sinh chia sẻ và lan tỏa cảm xúc tích cực trong lớp."
+    },
+    {
+        q: " Một học sinh giúp bạn mới sắp xếp đồ dùng học tập và chỉ dẫn nội quy lớp. Việc làm đó:",
+        a: "Đáp án đúng: <b>A</b><br>Thể hiện tinh thần hợp tác và sự quan tâm đến người khác."
+    },
+    {
+        q: "Một lớp học luôn được duy trì gọn gàng, cây xanh được chăm sóc thường xuyên, bàn ghế sạch sẽ, ánh sáng đầy đủ. Đây là biểu hiện cụ thể của tiêu chí nào?",
+        a: "Đáp án đúng: <b>D</b><br>Xây dựng môi trường xanh – sạch – đẹp, an toàn và lành mạnh."
+    },
+    {
+        q: "Nhà trường tổ chức hoạt động “Ngày hội không rác thải nhựa”, khuyến khích học sinh mang chai nước cá nhân và tái chế vật dụng cũ. Hoạt động này nhằm:",
+        a: "Đáp án đúng: <b>A</b><br>Đáp ứng tiêu chí trường học xanh, góp phần bảo vệ môi trường bền vững."
+    },
+    {
+        q: "Trong trường học hạnh phúc, yếu tố đầu tiên cần được đảm bảo cho mọi học sinh là:",
+        a: "Đáp án đúng: <b>C</b><br>Cảm thấy an toàn, được yêu thương và tôn trọng trong mọi hoạt động."
+    },
+    {
+        q: "Một trường học hạnh phúc được nhận biết không phải qua số lượng giải thưởng, mà qua:",
+        a: "Đáp án đúng: <b>A</b><br>Cảm xúc tích cực và sự gắn bó của học sinh, giáo viên, phụ huynh."
+    },
+    {
+        q: "Giáo viên chủ nhiệm yêu cầu các bạn trong lớp luân phiên đảm nhiệm vai trò “người hỗ trợ cảm xúc”, lắng nghe tâm sự bạn bè. Việc làm này góp phần:",
+        a: "Đáp án đúng: <b>A</b><br>Tăng cường sự gắn kết, chia sẻ và đồng cảm giữa các học sinh."
+    },
+    {
+        q: "Khi phát hiện trẻ em bị bạo hành, mọi công dân có nghĩa vụ:",
+        a: "Đáp án đúng: <b>C</b><br>Báo cho cơ quan, tổ chức có thẩm quyền"
+    },
+    {
+        q: " Quyền nào dưới đây KHÔNG thuộc quyền của trẻ em theo Luật Trẻ em 2016?",
+        a: "Đáp án đúng: <b>C</b><br>Quyền được nghỉ hưu"
+    },
+    {
+        q: "Your classmate shares a secret with you, but others ask about it. What should you do?",
+        a: "Đáp án đúng: <b>A</b><br>Keep it confidential to respect their trust."
+    },
+    {
+        q: "Khẩu hiệu quen thuộc về bảo vệ môi trường là gì?",
+        a: "Đáp án đúng: <b>D</b><br>“Tiết kiệm hôm nay, một thế giới xanh ngày mai”"
+    },
+    {
+        q: "Your classmate often forgets to bring books and gets scolded by the teacher. What should you do as a supportive friend?",
+        a: "Đáp án đúng: <b>A</b><br>Lend your books and remind them kindly to prepare next time."
+    },
+    {
+        q: "A classmate seems sad and avoids talking after receiving a low grade. What’s the best way to help?",
+        a: "Đáp án đúng: <b>A</b><br>Encourage them and offer to review lessons together."
+    },
+    {
+        q: "You notice your friend is unusually quiet and sad these days. What should you do?",
+        a: "Đáp án đúng: <b>A</b><br>Ask if they’re okay and offer to listen."
+    },
+    {
+        q: "Trong lớp, học sinh được quyền lựa chọn hình thức học nhóm, thảo luận hoặc trình bày. Điều này thể hiện:",
+        a: "Đáp án đúng: <b>A</b><br>Tôn trọng phong cách học tập cá nhân và phát huy năng lực riêng của học sinh."
+    },
+    {
+        q: "A teacher notices a student often remains silent and avoids discussions. According to the “Happy School” spirit, the most appropriate approach is:",
+        a: "Đáp án đúng: <b>B</b><br>Find out the reason and encourage with respect and attentive listening."
+    },
+    {
+        q: "Giáo viên mỉm cười, nói lời “Cảm ơn em đã cố gắng” dù học sinh chưa đạt kết quả cao. Cử chỉ đó có ý nghĩa:",
+        a: "Đáp án đúng: <b>B</b><br>Thể hiện sự bao dung và khích lệ tiến bộ của học sinh."
+    },
+    {
+        q: "In a happy learning environment, “student voice” means:",
+        a: "Đáp án đúng: <b>A</b><br>Students are encouraged to express ideas and opinions respectfully."
+    },
+    {
+        q: "Một giáo viên nói: “Cô không mong các em hoàn hảo, cô chỉ mong các em tốt hơn chính mình của hôm qua.” Câu nói đó thể hiện:",
+        a: "Đáp án đúng: <b>A</b><br>Triết lý giáo dục nhân văn, chú trọng sự tiến bộ cá nhân."
+    },
+    {
+        q: "A happy classroom encourages students to see mistakes as:",
+        a: "Đáp án đúng: <b>A</b><br>Opportunities to learn and grow."
+    },
+    {
+        q: "Một học sinh cảm thấy buồn và chia sẻ với giáo viên. Giáo viên nói: “Cảm ơn con đã tin tưởng chia sẻ. Cô luôn ở đây để lắng nghe.” Hành động của cô thể hiện:",
+        a: "Đáp án đúng: <b>B</b><br>Thấu hiểu và đồng hành cùng học sinh – tinh thần cốt lõi của người thầy trong trường học hạnh phúc."
+    },
+    {
+        q: "In a happy school, what does “inclusive education” mainly mean?",
+        a: "Đáp án đúng: <b>A</b><br>Allowing all students to participate, regardless of differences."
+    },
+    {
+        q: "Trong buổi họp lớp, một học sinh nói: “Chúng ta không cần so sánh lớp mình với lớp khác, quan trọng là chúng ta tiến bộ.” Câu nói này thể hiện:",
+        a: "Đáp án đúng: <b>A</b><br>Nhận thức đúng đắn về tinh thần hợp tác, không ganh đua tiêu cực."
+    },
+    {
+        q: "A teacher notices a conflict between two students. According to the Happy School model, the teacher should:",
+        a: "Đáp án đúng: <b>B</b><br>Listen to both sides, help them understand each other, and find a fair solution."
+    },
+    {
+        q: "Một trường tổ chức “Tuần lễ cảm xúc tích cực”, nơi học sinh viết lời động viên cho nhau. Hoạt động này giúp:",
+        a: "Đáp án đúng: <b>D</b><br>Củng cố tình bạn, lan tỏa sự đồng cảm và yêu thương trong tập thể."
+    },
+    {
+        q: "A student says they feel stressed because they’re afraid of being laughed at when speaking up. According to the “Active Listening and Emotional Safety” principle, the teacher should:",
+        a: "Đáp án đúng: <b>A</b><br>Encourage the student by affirming that their ideas are always worth respecting."
+    },
+    {
+        q: "Một học sinh nói: “Em thấy trường mình vui vì thầy cô không chỉ dạy kiến thức mà còn dạy cách làm người.” Cảm nhận đó phản ánh:",
+        a: "Đáp án đúng: <b>C</b><br>Sự thành công trong giáo dục giá trị sống và kỹ năng sống."
+    },
+    {
+        q: "A school sets up a “Feelings Corner” where students can write about what made them happy or sad during the week. This activity helps:",
+        a: "Đáp án đúng: <b>A</b><br>Students feel heard and develop emotional awareness."
+    },
+    {
+        q: "Nhà trường khuyến khích học sinh thảo luận, tranh luận nhẹ nhàng và biết lắng nghe quan điểm khác biệt. Đây là biểu hiện của:",
+        a: "Đáp án đúng: <b>C</b><br>Thực hiện dân chủ học đường, tôn trọng sự khác biệt và đa dạng. "
+    },
+    {
+        q: "When a student says sorry and takes responsibility for a mistake, teachers should:",
+        a: "Đáp án đúng: <b>A</b><br>Appreciate the honesty and help the student reflect constructively."
+    },
+    {
+        q: "Trong một tiết học, giáo viên khuyến khích học sinh mắc lỗi và sửa sai cùng nhau. Điều này thể hiện quan điểm:",
+        a: "Đáp án đúng: <b>C</b><br>Lỗi sai là cơ hội học tập và phát triển, không phải điều đáng sợ."
+    },
+    {
+        q: "A teacher always smiles and greets students before each lesson. What does this habit mean in building a happy school?",
+        a: "Đáp án đúng: <b>A</b><br>It creates positive emotions and a sense of safety for students from the start of the class."
+    },
+    {
+        q: "Hoạt động “Tôi yêu Hà Nội thanh lịch” được tổ chức nhằm:",
+        a: "Đáp án đúng: <b>B</b><br>Gắn giáo dục văn hóa địa phương với hành vi ứng xử văn minh của học sinh."
+    },
+    {
+        q: "In a happy classroom, how should teachers respond to diversity?",
+        a: "Đáp án đúng: <b>A</b><br>Respect each student’s uniqueness and adjust teaching methods accordingly."
+    },
+    {
+        q: "Khi thấy bạn mới vào lớp còn rụt rè, một nhóm học sinh chủ động đến trò chuyện và hướng dẫn chỗ ngồi. Hành động này thể hiện:",
+        a: "Đáp án đúng: <b>A</b><br>Sự đồng cảm, yêu thương và tinh thần hỗ trợ lẫn nhau trong tập thể."
+    },
+    {
+        q: "A group of students work together; despite differing opinions, they remain respectful and listen to each other. This behavior shows:",
+        a: "Đáp án đúng: <b>A</b><br>Cooperation skills and positive communication."
+    },
+    {
+        q: "Nhà trường tổ chức diễn đàn “Học sinh nói – Nhà trường lắng nghe”. Mục đích của hoạt động này là:",
+        a: "Đáp án đúng: <b>D</b><br>Thực hiện quy chế dân chủ, khuyến khích học sinh tham gia xây dựng môi trường giáo dục."
+    },
+    {
+        q: "In a happy school, teachers are expected to:",
+        a: "Đáp án đúng: <b>A</b><br>Build positive relationships with students based on care and respect."
+    },
+    {
+        q: "Một trường học khuyến khích học sinh tự trang trí lớp học và trồng cây xanh quanh khuôn viên. Hoạt động này thể hiện:",
+        a: "Đáp án đúng: <b>A</b><br>Xây dựng môi trường học tập xanh – sạch – đẹp, an toàn và thân thiện."
+    },
+    {
+        q: "A student helps a new classmate arrange school supplies and explains class rules. This action:",
+        a: "Đáp án đúng: <b>A</b><br>Shows cooperation and care for others."
+    },
+    {
+        q: "Một lớp học luôn duy trì không khí vui vẻ, học sinh cảm thấy “muốn đến trường mỗi ngày”.",
+        a: "Đáp án đúng: <b>B</b><br>Sự phối hợp hiệu quả giữa giáo viên, học sinh và phụ huynh trong xây dựng môi trường tích cực."
+    },
+    {
+        q: "“No one is left behind” means that:",
+        a: "Đáp án đúng: <b>A</b><br>Students support each other so everyone can learn and grow."
+    },
+    {
+        q: "Một trường học được xem là “trường học hạnh phúc” khi:",
+        a: "Đáp án đúng: <b>A</b><br>Tất cả thành viên đều cảm thấy được an toàn, tôn trọng và có cơ hội phát triển bản thân."
+    },
+    {
+        q: "A “safe learning environment” refers to a place where:",
+        a: "Đáp án đúng: <b>A</b><br>Students are physically protected and emotionally supported."
+    },
+];
+
+/* Bỏ dấu tiếng Việt */
+function normalize(str){
+    return str.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, "")
+        .trim();
+}
+
+/* Highlight từ khóa */
+function highlight(text, keyword){
+    if(!keyword) return text;
+    let escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    let regex = new RegExp(`(${escaped})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
+}
+
+function searchAnswer(){
+    let inputRaw = question.value.trim();
+    let input = normalize(inputRaw);
+    let result = document.getElementById("result");
+
+    if(!input){
+        result.innerHTML = `<span class="err">⚠️ Vui lòng nhập từ khóa</span>`;
+        return;
+    }
+
+    let found = data.filter(item => {
+        let qNorm = normalize(item.q);
+        let words = input.split(/\s+/);
+
+        return words.every(w => {
+            let regex = new RegExp(`\\b${w}\\b`, "i");
+            return regex.test(qNorm);
+        });
+    });
+
+    if(found.length){
+        result.innerHTML = found.map(f => `
+            <div class="ok">✅ <b>${highlight(f.q, inputRaw)}</b></div>
+            ${highlight(f.a, inputRaw)}
+            <br><br>
+        `).join("");
+    }else{
+        result.innerHTML = `<span class="err">❌ Không tìm thấy đáp án phù hợp</span>`;
+    }
+}
+question.addEventListener("keydown",e=>{
+    if(e.key==="Enter") searchAnswer();
+});
+</script>
+
+</body>
+</html>
+
+
+
+
