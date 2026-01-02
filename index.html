@@ -147,6 +147,7 @@ mark{
 </div>
 
 <script>
+/* ===== DỮ LIỆU (rút gọn demo – bạn dán FULL 200 câu vào đây) ===== */
 const data = [
     {
         q: "Khi nói Trường học hạnh phúc bắt đầu từ cảm xúc an toàn của học sinh",
@@ -594,7 +595,7 @@ const data = [
     },
     {
         q: "A group of students work together; despite differing opinions, they remain respectful and listen to each other. This behavior shows:",
-        a: "Đáp án đúng: <b>A</b><br>"Cooperation skills and positive communication."
+        a: "Đáp án đúng: <b>A</b><br>Cooperation skills and positive communication."
     },
     {
         q: "Trong một tiết học, cô giáo khuyến khích học sinh tự đặt câu hỏi thay vì chỉ nghe giảng. Điều này thể hiện:",
@@ -950,65 +951,29 @@ const data = [
     },
 ];
 
-/* Bỏ dấu tiếng Việt */
-function normalize(str){
-    return str.toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9\s]/g, "")
-        .trim();
-}
 
-/* Highlight từ khóa */
-function highlight(text, keyword){
-    if(!keyword) return text;
-    let escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    let regex = new RegExp(`(${escaped})`, "gi");
-    return text.replace(regex, "<mark>$1</mark>");
+/* ===== HÀM TÌM KIẾM ===== */
+function escapeRegExp(s){
+    return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 }
-
+function highlight(text,key){
+    return text.replace(new RegExp(`(${escapeRegExp(key)})`,'gi'),'<mark>$1</mark>');
+}
 function searchAnswer(){
-    let inputRaw = question.value.trim();
-    let input = normalize(inputRaw);
-    let result = document.getElementById("result");
-
-    if(!input){
-        result.innerHTML = `<span class="err">⚠️ Vui lòng nhập từ khóa</span>`;
-        return;
-    }
-
-    let found = data.filter(item => {
-        let qNorm = normalize(item.q);
-        let words = input.split(/\s+/);
-
-        return words.every(w => {
-            let regex = new RegExp(`\\b${w}\\b`, "i");
-            return regex.test(qNorm);
-        });
-    });
-
-    if(found.length){
-        result.innerHTML = found.map(f => `
-            <div class="ok">✅ <b>${highlight(f.q, inputRaw)}</b></div>
-            ${highlight(f.a, inputRaw)}
-            <br><br>
-        `).join("");
-    }else{
-        result.innerHTML = `<span class="err">❌ Không tìm thấy đáp án phù hợp</span>`;
-    }
+    const key=document.getElementById("question").value.trim().toLowerCase();
+    const box=document.getElementById("result");
+    if(!key){box.innerHTML='<span class="err">⚠️ Nhập từ khóa</span>';return;}
+    box.innerHTML="⏳ Đang tìm đáp án...";
+    setTimeout(()=>{
+        const found=data.find(d=>d.q.toLowerCase().includes(key));
+        box.innerHTML=found
+            ? `<div class="ok"><b>Câu hỏi:</b><br>${highlight(found.q,key)}<hr>${found.a}</div>`
+            : `<span class="err">❌ Không tìm thấy</span>`;
+    },2000);
 }
 question.addEventListener("keydown",e=>{
     if(e.key==="Enter") searchAnswer();
 });
 </script>
-
 </body>
 </html>
-
-
-
-
-
-
-
-
